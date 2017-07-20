@@ -9,29 +9,30 @@ class game(object):
     A board obj
     """
     def __init__(self, n_col, n_row, n_mines):
+        #init board obj, set mines and calculate adj_mines
         self.col = n_col
         self.row = n_row
+        self.n_mines = n_mines
         self.board = [[' '] * self.col for c in range(self.row)]
         #this is the board shows with every move
         self.mines = [[0] * self.col for c in range(self.row)]
-        self.n_mines = n_mines
+        #0 safe, 1 mine
         self.adj_mines = [[0] * self.col for c in range(self.row)]
-        self.setmines(self.n_mines)
-        #0 IS safe, 1 is mine
+        self.setmines()
         self.helpmsg = "please select a cell between: rows 1-" +\
                        str(self.row) + " and columns a-" + chr(ord('a') + self.col - 1) + " and type your selection. For example, to select cell a1 type \'a1\' if you want to flag the cell, add a letter \'f\' to the end, e.g. \'a1f\' "
-
-
         self.correctly_marked = 0
-        self.cor_mark_lst = []
-        self.wrong_loc_lst = []
         self.to_continue = True
 
     def in_range(self, r, c):
         return 0 <= r < self.row and 0 <= c < self.col
 
     def showboard(self,alt_board):
-        """ print board"""
+        """ print board, if alt_board supplied as alternative board, it can be used to
+        show the mine board, or the number of adjacent mines board;
+        if the a "final" string is supplied, it shows the results"
+        """
+
         grid_h = '   ' + (4 * self.col * '-') + '-'
         label_h = '     '
         for i in range(self.col):
@@ -43,28 +44,38 @@ class game(object):
             #row number
 
             for c in range(self.col):
-                if alt_board is None:
-                    row = row + ' ' + self.board[r][c] + ' |'
-                elif alt_board.lower() == "final":
+                if alt_board.lower() == "final":
                     if self.board[r][c] == u"\u2691":
-                        if self.mines[r][c] == 1:#flag and mine
-                            row = row + ' ' + u'\u2713' + ' |' #Check
-                        else:#flag and not mine
-                            row = row + u"\u2691" + ' X|'#Flag and X
+                        if self.mines[r][c] == 1:
+                            #flag and mine = Checkmark
+                            row = row + ' ' + u'\u2713' + ' |'
+                        else:
+                            #flag and not mine = Flag and X
+                            row = row + u"\u2691" + ' X|'
                     else:
-                        if self.mines[r][c] == 1:#not flag and mine
-                            row = row + ' ' + u"\U0001F4A3" + ' |'#Bomb
-                        else:#not flag and not mine
-                            row = row + ' ' + str(self.adj_mines[r][c]) + ' |'#same old
-                else:#alt_board supplied
-                    row = row + ' ' + str(alt_board[r][c]) + ' |'
+                        if self.mines[r][c] == 1:
+                            #not flag and mine = Bomb
+                            row = row + ' ' + u"\U0001F4A3" + ' |'
+                        else:
+                            #not flag and not mine = same old
+                            row = row + ' ' + str(self.adj_mines[r][c]) + ' |'
+                elif alt_board.lower() == "mine":
+                    #shows mines board
+                    row = row + ' ' + str(self.mines[r][c]) + ' |'
+                elif alt_board.lower() == "adj_mines":
+                    #shows adj_mines board
+                    row = row + ' ' + str(self.adj_mines[r][c]) + ' |'
+                else:
+                    #defaul to show game board
+                    row = row + ' ' + self.board[r][c] + ' |'
+
 
             print(row + '{0:2}'.format(r + 1) + '\n' + grid_h)
         print(label_h)
 
-    def setmines(self, n_mines):
+    def setmines(self):
         minelist = []
-        while len(minelist) < n_mines:
+        while len(minelist) < self.n_mines:
             r, c = random.randint(0, self.row - 1), random.randint(0, self.col - 1)
             if [r, c] not in minelist:
                 minelist.append([r, c])
@@ -74,14 +85,11 @@ class game(object):
             r_lst = [r - 1, r - 1, r - 1,     r,     r, r + 1, r + 1, r + 1]
             c_lst = [c - 1,     c, c + 1, c - 1, c + 1, c - 1,     c, c + 1]
             for n in range(len(r_lst)):
-                if self.in_range(r_lst[n],c_lst[n]):
-                    try:
-                        self.adj_mines[r_lst[n]][c_lst[n]] += 1
-                    except IndexError:
-                        print r_lst[n], c_lst[n]
+                if self.in_range(r_lst[n], c_lst[n]):
+                    self.adj_mines[r_lst[n]][c_lst[n]] += 1
 
     def dfs(self, r, c):
-        """on correct mark, make all neighbour non-mine blocks visible """
+        """on correct marking, making all neighbour non-mine blocks visible"""
         if not self.in_range(r, c): return
         if self.board[r][c] != ' ': return
         self.board[r][c] = str(self.adj_mines[r][c])
@@ -97,30 +105,28 @@ class game(object):
         """take input, validate, update board"""
         ip_str = raw_input("To show help message, please type \'help\', "
                            "to quit, type \'quit\'. \n")
-        if ip_str is None or len(ip_str) > 4:
+        if ip_str is None or len(ip_str) > 4 or len(ip_str) < 2:
             print self.helpmsg
             return
         elif len(ip_str) == 4:
-            if ip_str.lower() == "help":
-                print self.helpmsg
-                return
-            elif ip_str.lower() == "quit":
+            if ip_str.lower() == "quit":
                 print "Bye"
                 exit(0)
-            else:
+            else:# help and everything else
                 print self.helpmsg
                 return
-        c, r, flag = int(ord(ip_str[0]) - ord('a')), int(ip_str[1]) - 1, False
-        if len(ip_str) == 3:
-            flag = True
+        c, r, = int(ord(ip_str[0]) - ord('a')), int(ip_str[1]) - 1
+        flag = (len(ip_str) == 3 and ip_str[2] == "f")
         if not self.in_range(r, c):
             print "Input exceeds board sizes!\n", self.helpmsg
             return
-
+        if self.board[r][c] == u"\u2691":
+            print "Unflagging cell", ip_str[0:2]
+            self.board[r][c] = " "
+            return
         if self.board[r][c] != ' ':
             print "This is cell is already explored, try another one!"
             return
-
         if not flag:
             if self.mines[r][c] == 1:
                 print "Game Over!"
@@ -161,14 +167,14 @@ if __name__ == "__main__":
             elif difficulty == 2:
                 game1 = game(16, 16, 32)
             elif difficulty == 3:
-                game1 = game(32,32, 96)
+                game1 = game(32, 32, 96)
             else:
                 print "Bye!"
                 exit(0)
             print game1.helpmsg
 
             while game1.to_continue and (not game1.solved()):
-                game1.showboard(None)
+                game1.showboard("")
                 print "Please enter or flag a new cell."
                 game1.parse_input()
 

@@ -60,3 +60,5 @@ if __name__ == "__main__":
         alg_dict = {'id': id, 'title': title,  'content': content}
         save_alg(alg_dict)
         print('Done!')
+
+
