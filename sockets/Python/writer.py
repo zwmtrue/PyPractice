@@ -20,5 +20,14 @@ print(f"Connected to server: {IP_ADDRESS}:{PORT}")
 
 # send status updates to the server
 while True:
-    status_update = input("Enter status update: ")
-    client_socket.send(status_update.encode())
+    try:
+        status_update = input("Enter status update: ")
+        client_socket.send(status_update.encode())
+    except KeyboardInterrupt:
+        print("Closing connection...")
+        client_socket.close()
+        break
+    except:
+        print("Error: Failed to send data.")
+        client_socket.close()
+        break

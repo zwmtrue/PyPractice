@@ -20,8 +20,20 @@ print(f"Connected to server: {IP_ADDRESS}:{PORT}")
 
 # receive status updates from the server
 while True:
-    data = client_socket.recv(BUFFER_SIZE)
-
-    if data:
-        status_update = data.decode()
-        print(f"New status update: {status_update}")
+    try:
+        data = client_socket.recv(BUFFER_SIZE)
+        if data:
+            status_update = data.decode()
+            print(f"New status update: {status_update}")
+        else:
+            print("Connection closed by server.")
+            client_socket.close()
+            break
+    except KeyboardInterrupt:
+        print("Closing connection...")
+        client_socket.close()
+        break
+    except:
+        print("Error: Failed to receive data.")
+        client_socket.close()
+        break

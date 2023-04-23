@@ -28,9 +28,10 @@ server_socket.listen()
 print(f"Server listening on {IP_ADDRESS}:{PORT}...")
 
 # function to broadcast status updates to all subscribed clients
-def broadcast(data):
+def broadcast(data, sender_socket):
     for client_socket in clients.values():
-        client_socket.send(data)
+        if client_socket != sender_socket:
+            client_socket.send(data)
 
 # main loop to handle client connections and data transmission
 while True:
@@ -57,8 +58,11 @@ while True:
 
             if data:
                 # broadcast the data to all subscribed clients
-                broadcast(data)
+                broadcast(data, read_socket)
             else:
                 # remove the client from the dictionary if no data received
                 del clients[read_socket]
                 print(f"Client disconnected: {read_socket.getpeername()}")
+
+                # close the socket
+                read_socket.close()
